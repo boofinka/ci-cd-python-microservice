@@ -16,6 +16,7 @@ async def log_requests(request: Request, call_next):
 
     response = await call_next(request)
     duration = round((time.time() - start) * 1000, 2)
+    client_ip = request.client.host if request.client is not None else None
 
     logger.info(
         "request completed",
@@ -24,7 +25,7 @@ async def log_requests(request: Request, call_next):
             "path": request.url.path,
             "status_code": response.status_code,
             "duration_ms": duration,
-            "client_ip": request.client.host,
+            "client_ip": client_ip,
         },
     )
 
