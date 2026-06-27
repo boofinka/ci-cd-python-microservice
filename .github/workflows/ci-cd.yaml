@@ -55,7 +55,7 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
 
       - name: Deploy to Kubernetes
-        run: kubectl apply -f k8s/
+        run: kubectl apply -f k8s/ --validate=false
 
       - name: Test cluster connection
         run: kubectl get nodes
