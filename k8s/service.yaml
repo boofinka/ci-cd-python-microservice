@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: python-microservice
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: python-microservice
   ports:
     - port: 80
-      targetPort: 8000
+      targetPort: 80
+      nodePort: 30080
