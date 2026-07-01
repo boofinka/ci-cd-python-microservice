@@ -59,7 +59,13 @@ sudo ufw allow 80/tcp
 sudo ufw reload
 ```
 
-If you are using OCI security lists or firewall rules, make sure inbound TCP port 80 is open.
+If you are using OCI security lists or firewall rules, make sure inbound TCP ports 80 and 443 are open from the internet.
+
+In Oracle Cloud, this typically means updating the VCN subnet security list or network security group for the VM to allow:
+
+- TCP 22 for SSH
+- TCP 80 for HTTP
+- TCP 443 for HTTPS
 
 ## 3. Create a GitHub Repository Secret
 

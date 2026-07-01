@@ -37,7 +37,26 @@ EOF
 sudo systemctl enable caddy
 sudo systemctl restart caddy
 
+sudo ufw allow 80/tcp || true
 sudo ufw allow 443/tcp || true
+sudo ufw --force enable || true
 
-sleep 5
-curl -I "https://$DOMAIN_NAME/health" || true
+echo "Checking local Caddy listener..."
+sudo ss -ltnp | grep -E ':(80|443)' || true
+
+echo "Waiting for HTTPS to come up..."
+for attempt in $(seq 1 10); do
+  if curl -fsS "https://$DOMAIN_NAME/health" >/tmp/caddy-health.out 2>/tmp/caddy-health.err; then
+    cat /tmp/caddy-health.out
+    exit 0
+  fi
+  echo "Attempt $attempt/10 failed. Retrying in 10s..."
+  cat /tmp/caddy-health.err 2>/dev/null || true
+  sudo journalctl -u caddy -n 40 --no-pager || true
+  sleep 10
+done
+
+echo "HTTPS health check failed. This usually means ports 80/443 are not reachable from the internet."
+echo "Check your Oracle Cloud security list / NSG rules and confirm the VM has a public IP."
+sudo systemctl status caddy --no-pager || true
+exit 1
