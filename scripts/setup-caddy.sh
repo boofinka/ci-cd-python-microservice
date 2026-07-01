@@ -9,6 +9,11 @@ if [ -z "$DOMAIN_NAME" ]; then
   exit 1
 fi
 
+if [[ "$DOMAIN_NAME" == *"example.com"* ]]; then
+  echo "Please use a real, fresh domain name that is not already in use."
+  exit 1
+fi
+
 if [ -z "$TLS_EMAIL" ]; then
   TLS_EMAIL="admin@$DOMAIN_NAME"
 fi

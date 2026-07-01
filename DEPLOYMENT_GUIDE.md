@@ -194,7 +194,7 @@ docker logs python-microservice
 
 To serve the app from a real domain name, you will need:
 
-- a registered domain name
+- a fresh domain name that is not already serving another site
 - DNS control for that domain
 - an A record pointing your domain to the Oracle VM public IP
 - optionally, a CNAME or ALIAS for `www`
