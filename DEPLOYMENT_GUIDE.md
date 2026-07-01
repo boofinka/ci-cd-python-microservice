@@ -190,12 +190,52 @@ Fix:
 docker logs python-microservice
 ```
 
-## 10. Optional: Make the App More Production-Ready
+## 10. Add a Domain Name and HTTPS
 
-After the initial deployment works, you may want to add:
+To serve the app from a real domain name, you will need:
 
-- HTTPS with Nginx or Caddy
-- a domain name
+- a registered domain name
+- DNS control for that domain
+- an A record pointing your domain to the Oracle VM public IP
+- optionally, a CNAME or ALIAS for `www`
+
+Example DNS setup:
+
+```text
+A     yourdomain.com      -> <oracle-vm-public-ip>
+A     www.yourdomain.com  -> <oracle-vm-public-ip>
+```
+
+Once DNS is pointing to the VM, you can install a reverse proxy such as Caddy or Nginx and enable TLS automatically.
+
+A simple Caddy-based approach is:
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install caddy
+```
+
+Then create a Caddyfile:
+
+```caddyfile
+yourdomain.com {
+    reverse_proxy localhost:80
+}
+```
+
+Run:
+
+```bash
+sudo caddy run --config /etc/caddy/Caddyfile
+```
+
+For production use, Caddy can automatically obtain a certificate for your domain.
+
+Other improvements you may want later:
+
 - Docker Compose for easier management
 - persistent logs
 - environment variables

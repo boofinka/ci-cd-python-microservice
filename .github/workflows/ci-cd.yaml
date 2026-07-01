@@ -92,3 +92,10 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/deploy-on-vm.sh -o deploy-on-vm.sh
             chmod +x deploy-on-vm.sh
             ./deploy-on-vm.sh "$IMAGE"
+            if [ -n "$DOMAIN_NAME" ]; then
+              curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/setup-caddy.sh -o setup-caddy.sh
+              chmod +x setup-caddy.sh
+              ./setup-caddy.sh "$DOMAIN_NAME" "$TLS_EMAIL"
+              echo "Checking HTTPS health endpoint..."
+              curl -fsS "https://$DOMAIN_NAME/health"
+            fi
