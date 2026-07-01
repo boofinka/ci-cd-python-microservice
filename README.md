@@ -96,34 +96,47 @@ The pipeline performs:
 2. Run tests
 3. Build Docker image
 4. Push image to GHCR
-5. Deploy to Kubernetes
+5. Deploy it to an Oracle VM over SSH
 
 The workflow file is located at:
 
 `.github/workflows/ci-cd.yaml`
 
+### Required GitHub secrets
+
+Create these repository secrets in GitHub:
+
+- `ORACLE_VM_HOST` — public IP or hostname of the VM
+- `ORACLE_VM_USER` — SSH username (commonly `ubuntu` or `opc`)
+- `ORACLE_VM_SSH_KEY` — private SSH key for the VM
+
+The deployment step will:
+
+- log in to GHCR
+- pull the latest image
+- stop any existing container named `python-microservice`
+- start a new container on port `80`
+
 ---
 
-## Kubernetes Deployment
+## Oracle VM deployment notes
 
-The `k8s/` folder contains:
+On the VM, ensure Docker is installed and the firewall allows TCP port `80`.
 
-- `deployment.yaml` — application deployment
-- `service.yaml` — ClusterIP service
-- `ingress.yaml` — optional ingress routing
-
-### Apply all manifests
+Example:
 
 ```bash
-kubectl apply -f k8s/
+sudo apt update
+sudo apt install -y docker.io
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker $USER
 ```
 
-### Check resources
+After the first deployment, the app should be reachable at:
 
-```bash
-kubectl get pods
-kubectl get svc
-kubectl get ingress
+```text
+http://<your-vm-ip>/health
 ```
 
 ---
