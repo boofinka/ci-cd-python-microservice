@@ -67,12 +67,14 @@ jobs:
           IMAGE: ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}:${{ github.sha }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOMAIN_NAME: ${{ secrets.ORACLE_VM_DOMAIN }}
+          TLS_EMAIL: ${{ secrets.ORACLE_VM_TLS_EMAIL }}
         with:
           host: ${{ secrets.ORACLE_VM_HOST }}
           username: ${{ secrets.ORACLE_VM_USER }}
           key: ${{ secrets.ORACLE_VM_SSH_KEY }}
           port: 22
-          envs: IMAGE,GHCR_USERNAME,GHCR_TOKEN
+          envs: IMAGE,GHCR_USERNAME,GHCR_TOKEN,DOMAIN_NAME,TLS_EMAIL
           script: |
             set -e
             sudo apt update

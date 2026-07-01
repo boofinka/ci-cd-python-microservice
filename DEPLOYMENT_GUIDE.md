@@ -40,6 +40,8 @@ sudo systemctl start docker
 sudo usermod -aG docker $USER
 ```
 
+The setup script is idempotent, so future runs will skip Docker installation if it is already present and will also open TCP port 443 for HTTPS traffic.
+
 Log out and back in so the Docker group takes effect.
 
 Verify Docker is working:
