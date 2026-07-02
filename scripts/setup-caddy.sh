@@ -29,7 +29,7 @@ fi
 
 sudo tee /etc/caddy/Caddyfile >/dev/null <<EOF
 $DOMAIN_NAME {
-    reverse_proxy localhost:80
+    reverse_proxy 127.0.0.1:8080
     tls $TLS_EMAIL
 }
 EOF

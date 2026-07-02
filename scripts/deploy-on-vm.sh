@@ -29,7 +29,7 @@ sudo docker rm -f python-microservice >/dev/null 2>&1 || true
 sudo docker run -d \
   --name python-microservice \
   --restart unless-stopped \
-  -p 80:8000 \
+  -p 127.0.0.1:8080:8000 \
   "$IMAGE"
 
 echo "Container status:"
