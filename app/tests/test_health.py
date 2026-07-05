@@ -1,5 +1,7 @@
+from datetime import datetime
+
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app, is_shaas_window
 
 client = TestClient(app)
 
@@ -14,3 +16,29 @@ def test_root_serves_index_html():
     response = client.get("/")
     assert response.status_code == 200
     assert response.text
+
+
+def test_is_shaas_window_for_friday_evening():
+    assert is_shaas_window(datetime(2026, 7, 3, 17, 0)) is True
+
+
+def test_is_shaas_window_for_saturday_evening():
+    assert is_shaas_window(datetime(2026, 7, 4, 21, 0)) is True
+
+
+def test_is_shaas_window_outside_window():
+    assert is_shaas_window(datetime(2026, 7, 4, 21, 1)) is False
+
+
+def test_shaas_endpoint_returns_yes(monkeypatch):
+    monkeypatch.setattr("app.main.is_shaas_window", lambda now: True)
+    response = client.get("/shaas")
+    assert response.status_code == 200
+    assert response.text == "Yes"
+
+
+def test_shaas_endpoint_returns_no(monkeypatch):
+    monkeypatch.setattr("app.main.is_shaas_window", lambda now: False)
+    response = client.get("/shaas")
+    assert response.status_code == 200
+    assert response.text == "No"

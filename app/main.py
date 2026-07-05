@@ -1,5 +1,6 @@
+from datetime import datetime, time as dt_time
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from pathlib import Path
 import time
 import logging
@@ -12,6 +13,14 @@ logger = logging.getLogger("app")
 app = FastAPI()
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 INDEX_HTML_PATH = STATIC_DIR / "index.html"
+
+
+def is_shaas_window(now: datetime) -> bool:
+    if now.weekday() == 4:  # Friday
+        return dt_time(17, 0) <= now.time() <= dt_time(23, 59, 59)
+    if now.weekday() == 5:  # Saturday
+        return dt_time(0, 0) <= now.time() <= dt_time(21, 0)
+    return False
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -45,3 +54,10 @@ def health():
 @app.get("/")
 def root():
     return FileResponse(INDEX_HTML_PATH)
+
+
+@app.get("/shaas")
+def shaas(request: Request):
+    now = datetime.now()
+    answer = "Yes" if is_shaas_window(now) else "No"
+    return PlainTextResponse(answer)
