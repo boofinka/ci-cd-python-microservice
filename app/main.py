@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
+from pathlib import Path
 import time
 import logging
 
@@ -9,6 +10,8 @@ configure_logging()
 logger = logging.getLogger("app")
 
 app = FastAPI()
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+INDEX_HTML_PATH = STATIC_DIR / "index.html"
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
@@ -41,4 +44,4 @@ def health():
 
 @app.get("/")
 def root():
-    return {"message": "Hello from CI/CD Python Microservice!"}
+    return FileResponse(INDEX_HTML_PATH)
