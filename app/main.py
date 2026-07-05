@@ -1,5 +1,8 @@
 from datetime import datetime
 from typing import Optional, Tuple
+
+_SHABBAT_WINDOW_CACHE: Optional[Tuple[datetime, datetime]] = None
+_SHABBAT_CACHE_WEEK: Optional[Tuple[int, int]] = None
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, PlainTextResponse
 from pathlib import Path
@@ -29,7 +32,18 @@ def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
     return None
 
 
-def get_shabbat_window(request_ip: Optional[str] = None) -> Optional[Tuple[datetime, datetime]]:
+def _get_cache_key(now: datetime) -> Tuple[int, int]:
+    return now.year, now.isocalendar().week
+
+
+def get_shabbat_window(request_ip: Optional[str] = None, now: Optional[datetime] = None) -> Optional[Tuple[datetime, datetime]]:
+    current_time = now or datetime.now().astimezone()
+    cache_key = _get_cache_key(current_time)
+    global _SHABBAT_WINDOW_CACHE, _SHABBAT_CACHE_WEEK
+
+    if _SHABBAT_WINDOW_CACHE is not None and _SHABBAT_CACHE_WEEK == cache_key:
+        return _SHABBAT_WINDOW_CACHE
+
     geo_loc_api_url = f"http://ip-api.com/json/{request_ip}" if request_ip else "http://ip-api.com/json/"
 
     try:
@@ -55,13 +69,15 @@ def get_shabbat_window(request_ip: Optional[str] = None) -> Optional[Tuple[datet
         if start_time is None or end_time is None:
             return None
 
-        return start_time, end_time
+        _SHABBAT_WINDOW_CACHE = (start_time, end_time)
+        _SHABBAT_CACHE_WEEK = cache_key
+        return _SHABBAT_WINDOW_CACHE
     except requests.RequestException:
         return None
 
 
 def is_shaas_window(now: datetime, request_ip: Optional[str] = None) -> bool:
-    window = get_shabbat_window(request_ip)
+    window = get_shabbat_window(request_ip=request_ip, now=now)
     if window is None:
         return False
 

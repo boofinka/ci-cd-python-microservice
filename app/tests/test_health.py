@@ -21,7 +21,7 @@ def test_root_serves_index_html():
 def test_is_shaas_window_inside_window(monkeypatch):
     monkeypatch.setattr(
         "app.main.get_shabbat_window",
-        lambda request_ip=None: (datetime(2026, 7, 3, 17, 0), datetime(2026, 7, 4, 21, 0)),
+        lambda request_ip=None, now=None: (datetime(2026, 7, 3, 17, 0), datetime(2026, 7, 4, 21, 0)),
     )
     assert is_shaas_window(datetime(2026, 7, 3, 18, 0)) is True
 
@@ -29,7 +29,7 @@ def test_is_shaas_window_inside_window(monkeypatch):
 def test_is_shaas_window_outside_window(monkeypatch):
     monkeypatch.setattr(
         "app.main.get_shabbat_window",
-        lambda request_ip=None: (datetime(2026, 7, 3, 17, 0), datetime(2026, 7, 4, 21, 0)),
+        lambda request_ip=None, now=None: (datetime(2026, 7, 3, 17, 0), datetime(2026, 7, 4, 21, 0)),
     )
     assert is_shaas_window(datetime(2026, 7, 4, 21, 1)) is False
 
