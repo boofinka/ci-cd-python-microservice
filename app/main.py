@@ -1,11 +1,10 @@
+import json
 from datetime import datetime
-from typing import Optional, Tuple
+from pathlib import Path
+from typing import Dict, Optional, Tuple
 
-_SHABBAT_WINDOW_CACHE: Optional[Tuple[datetime, datetime]] = None
-_SHABBAT_CACHE_WEEK: Optional[Tuple[int, int]] = None
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, PlainTextResponse
-from pathlib import Path
 import logging
 import time
 
@@ -19,6 +18,8 @@ logger = logging.getLogger("app")
 app = FastAPI()
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 INDEX_HTML_PATH = STATIC_DIR / "index.html"
+CACHE_FILE = Path(__file__).resolve().parent / "shabbat_cache.json"
+_SHABBAT_WINDOW_CACHE: Dict[Tuple[str, int, int], Tuple[datetime, datetime]] = {}
 
 
 def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
@@ -32,17 +33,52 @@ def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
     return None
 
 
-def _get_cache_key(now: datetime) -> Tuple[int, int]:
-    return now.year, now.isocalendar().week
+def _get_cache_key(location: Optional[str], now: datetime) -> Tuple[str, int, int]:
+    location_key = location or "default"
+    return location_key, now.year, now.isocalendar().week
+
+
+def _load_cache() -> None:
+    global _SHABBAT_WINDOW_CACHE
+    if not CACHE_FILE.exists():
+        _SHABBAT_WINDOW_CACHE = {}
+        return
+
+    try:
+        with CACHE_FILE.open("r", encoding="utf-8") as handle:
+            raw_cache = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        _SHABBAT_WINDOW_CACHE = {}
+        return
+
+    parsed_cache: Dict[Tuple[str, int, int], Tuple[datetime, datetime]] = {}
+    for (location_key, year, week), (start_text, end_text) in raw_cache.items():
+        start_time = _parse_datetime(start_text)
+        end_time = _parse_datetime(end_text)
+        if start_time is not None and end_time is not None:
+            parsed_cache[(location_key, int(year), int(week))] = (start_time, end_time)
+
+    _SHABBAT_WINDOW_CACHE = parsed_cache
+
+
+def _save_cache() -> None:
+    serializable_cache = {
+        str(key): [start_time.isoformat(), end_time.isoformat()]
+        for key, (start_time, end_time) in _SHABBAT_WINDOW_CACHE.items()
+    }
+    with CACHE_FILE.open("w", encoding="utf-8") as handle:
+        json.dump(serializable_cache, handle, indent=2)
+
+
+_load_cache()
 
 
 def get_shabbat_window(request_ip: Optional[str] = None, now: Optional[datetime] = None) -> Optional[Tuple[datetime, datetime]]:
     current_time = now or datetime.now().astimezone()
-    cache_key = _get_cache_key(current_time)
-    global _SHABBAT_WINDOW_CACHE, _SHABBAT_CACHE_WEEK
+    cache_key = _get_cache_key(request_ip, current_time)
 
-    if _SHABBAT_WINDOW_CACHE is not None and _SHABBAT_CACHE_WEEK == cache_key:
-        return _SHABBAT_WINDOW_CACHE
+    if cache_key in _SHABBAT_WINDOW_CACHE:
+        return _SHABBAT_WINDOW_CACHE[cache_key]
 
     geo_loc_api_url = f"http://ip-api.com/json/{request_ip}" if request_ip else "http://ip-api.com/json/"
 
@@ -69,9 +105,9 @@ def get_shabbat_window(request_ip: Optional[str] = None, now: Optional[datetime]
         if start_time is None or end_time is None:
             return None
 
-        _SHABBAT_WINDOW_CACHE = (start_time, end_time)
-        _SHABBAT_CACHE_WEEK = cache_key
-        return _SHABBAT_WINDOW_CACHE
+        _SHABBAT_WINDOW_CACHE[cache_key] = (start_time, end_time)
+        _save_cache()
+        return _SHABBAT_WINDOW_CACHE[cache_key]
     except requests.RequestException:
         return None
 
